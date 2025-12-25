@@ -1,1 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>F1 Reaction Test</title>
 
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #0c0c0c;
+    color: white;
+    text-align: center;
+    padding-top: 20px;
+}
+
+h1 { margin-bottom: 10px; }
+p { opacity: 0.8; }
+
+.f1-start {
+    width: 260px;
+    margin: 30px auto;
+    padding: 20px;
+    background: #111;
+    border-radius: 15px;
+}
+
+.columns {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.light {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: #300;
+}
+
+.light.on {
+    background: red;
+    box-shadow: 0 0 20px red;
+}
+
+button {
+    padding: 15px 40px;
+    font-size: 22px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    margin: 15px;
+    color: white;
+}
+
+#startBtn { background: #007bff; }
+#stopBtn { background: #28a745; display: none; }
+
+#result {
+    font-size: 28px;
+    margin-top: 15px;
+}
+
+table {
+    margin: 30px auto;
+    border-collapse: collapse;
+    width: 300px;
+}
+
+th, td {
+    border: 1px solid #444;
+    padding: 8px;
+}
+
+th {
+    background: #222;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Тест реакции F1</h1>
+<p>Нажми START и останови таймер как можно быстрее</p>
+
+<div class="f1-start">
+    <div class="columns" id="columns"></div>
+</div>
+
+<button id="startBtn">START</button>
+<button id="stopBtn">STOP</button>
+
+<div id="result"></div>
+
+<h2>🏆 Таблица рекордов</h2>
+<table>
+    <thead>
+        <tr><th>Место</th><th>Время (мс)</th></tr>
+    </thead>
+    <tbody id="records"></tbody>
+</table>
+
+<script>
+let columns = [];
+let timerStarted = false;
+let startTime = 0;
+
+function createLights() {
+    const c = document.getElementById("columns");
+    c.innerHTML = "";
+    columns = [];
+
+    for (let i = 0; i < 5; i++) {
+        const col = document.createElement("div");
+        col.className = "column";
+        const lights = [];
+
+        for (let j = 0; j < 3; j++) {
+            const l = document.createElement("div");
+            l.className = "light";
+            col.appendChild(l);
+            lights.push(l);
+        }
+
+        c.appendChild(col);
+        columns.push(lights);
+    }
+}
+
+createLights();
+
+function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+}
+
+async function start() {
+    document.getElementById("result").innerText = "";
+    document.getElementById("startBtn").style.display = "none";
+    document.getElementById("stopBtn").style.display = "inline-block";
+    timerStarted = false;
+    createLights();
+
+    for (let i = 0; i < 5; i++) {
+        columns[i].forEach(l => l.classList.add("on"));
+        await sleep(700);
+    }
+
+    await sleep(Math.random() * 2000 + 1500);
+
+    columns.flat().forEach(l => l.classList.remove("on"));
+
+    timerStarted = true;
+    startTime = performance.now();
+}
+
+function stop() {
+    if (!timerStarted) {
+        document.getElementById("result").innerText = "❌ Фальстарт!";
+        reset();
+        return;
+    }
+
+    const reaction = Math.round(performance.now() - startTime);
+    document.getElementById("result").innerHTML = `⏱ ${reaction} мс`;
+
+    saveRecord(reaction);
+    showRecords();
+    reset();
+}
+
+function reset() {
+    document.getElementById("startBtn").style.display = "inline-block";
+    document.getElementById("stopBtn").style.display = "none";
+}
+
+function saveRecord(time) {
+    let records = JSON.parse(localStorage.getItem("f1Records")) || [];
+    records.push(time);
+    records.sort((a, b) => a - b);
+    records = records.slice(0, 5);
+    localStorage.setItem("f1Records", JSON.stringify(records));
+}
+
+function showRecords() {
+    const tbody = document.getElementById("records");
+    tbody.innerHTML = "";
+    const records = JSON.parse(localStorage.getItem("f1Records")) || [];
+
+    records.forEach((time, i) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${i + 1}</td><td>${time}</td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+showRecords();
+
+document.getElementById("startBtn").addEventListener("click", start);
+document.getElementById("stopBtn").addEventListener("click", stop);
+</script>
+
+</body>
+</html>
