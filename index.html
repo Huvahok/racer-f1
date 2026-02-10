@@ -1,248 +1,266 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<title>F1 Reaction Test</title>
-
-<style>
-body {
-    font-family: Arial, sans-serif;
-    background: #0c0c0c;
-    color: white;
-    text-align: center;
-    padding-top: 20px;
-}
-
-h1 { margin-bottom: 10px; }
-p { opacity: 0.8; }
-
-.f1-start {
-    width: 260px;
-    margin: 30px auto;
-    padding: 20px;
-    background: #111;
-    border-radius: 15px;
-}
-
-.columns {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-}
-
-.column {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.light {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    background: #300;
-}
-
-.light.on {
-    background: red;
-    box-shadow: 0 0 20px red;
-}
-
-button {
-    padding: 15px 40px;
-    font-size: 22px;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    margin: 15px;
-    color: white;
-}
-
-#startBtn { background: #007bff; }
-#stopBtn { background: #28a745; display: none; }
-
-#result {
-    font-size: 28px;
-    margin-top: 15px;
-}
-
-table {
-    margin: 30px auto;
-    border-collapse: collapse;
-    width: 300px;
-}
-
-th, td {
-    border: 1px solid #444;
-    padding: 8px;
-}
-
-th {
-    background: #222;
-}
-</style>
-</head>
-
-<body>
-
-<h1>Тест реакции F1</h1>
-<p>Нажми START и останови таймер как можно быстрее</p>
-
-<div class="f1-start">
-    <div class="columns" id="columns"></div>
-</div>
-
-<button id="startBtn">START</button>
-<button id="stopBtn">STOP</button>
-
-<div id="result"></div>
-
-<h2>🏆 Таблица рекордов</h2>
-<table>
-    <thead>
-        <tr><th>Место</th><th>Время (мс)</th></tr>
-    </thead>
-    <tbody id="records"></tbody>
-</table>
-
-<script>
-let columns = [];
-let timerStarted = false;
-let startTime = 0;
-
-function createLights() {
-    const c = document.getElementById("columns");
-    c.innerHTML = "";
-    columns = [];
-
-    for (let i = 0; i < 5; i++) {
-        const col = document.createElement("div");
-        col.className = "column";
-        const lights = [];
-
-        for (let j = 0; j < 3; j++) {
-            const l = document.createElement("div");
-            l.className = "light";
-            col.appendChild(l);
-            lights.push(l);
+    <meta charset="UTF-8">
+    <title>F1 Reaction Test</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0c0c0c;
+            color: white;
+            text-align: center;
         }
 
-        c.appendChild(col);
-        columns.push(lights);
-    }
-}
+        header {
+            background: linear-gradient(90deg, #b30000, #000);
+            padding: 30px 10px;
+        }
 
-createLights();
+        section {
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 0 15px;
+            text-align: left;
+        }
 
-function sleep(ms) {
-    return new Promise(r => setTimeout(r, ms));
-}
+        h1, h2, h3 {
+            color: #ff4d4d;
+        }
 
-async function start() {
-    document.getElementById("result").innerText = "";
-    document.getElementById("startBtn").style.display = "none";
-    document.getElementById("stopBtn").style.display = "inline-block";
-    timerStarted = false;
-    createLights();
+        p {
+            line-height: 1.6;
+            opacity: 0.9;
+        }
 
-    for (let i = 0; i < 5; i++) {
-        columns[i].forEach(l => l.classList.add("on"));
-        await sleep(700);
-    }
+        .f1-start {
+            width: 260px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #111;
+            border-radius: 15px;
+        }
 
-    await sleep(Math.random() * 2000 + 1500);
+        .columns {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
 
-    columns.flat().forEach(l => l.classList.remove("on"));
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
 
-    timerStarted = true;
-    startTime = performance.now();
-}
+        .light {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: #300;
+        }
 
-function stop() {
-    if (!timerStarted) {
-        document.getElementById("result").innerText = "❌ Фальстарт!";
-        reset();
-        return;
-    }
+        .light.on {
+            background: red;
+            box-shadow: 0 0 20px red;
+        }
 
-    const reaction = Math.round(performance.now() - startTime);
-    document.getElementById("result").innerHTML = `⏱ ${reaction} мс`;
+        button {
+            padding: 15px 35px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            color: white;
+        }
 
-    saveRecord(reaction);
-    showRecords();
-    reset();
-}
+        #startBtn { background: #007bff; }
+        #stopBtn { background: #28a745; display: none; }
 
-function reset() {
-    document.getElementById("startBtn").style.display = "inline-block";
-    document.getElementById("stopBtn").style.display = "none";
-}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
 
-function saveRecord(time) {
-    let records = JSON.parse(localStorage.getItem("f1Records")) || [];
-    records.push(time);
-    records.sort((a, b) => a - b);
-    records = records.slice(0, 5);
-    localStorage.setItem("f1Records", JSON.stringify(records));
-}
+        th, td {
+            border: 1px solid #444;
+            padding: 8px;
+            text-align: center;
+        }
 
-function showRecords() {
-    const tbody = document.getElementById("records");
-    tbody.innerHTML = "";
-    const records = JSON.parse(localStorage.getItem("f1Records")) || [];
+        th {
+            background: #222;
+        }
 
-    records.forEach((time, i) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${i + 1}</td><td>${time}</td>`;
-        tbody.appendChild(tr);
-    });
-}
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 6px;
+            border: none;
+        }
 
-showRecords();
+        footer {
+            background: #111;
+            padding: 20px;
+            margin-top: 50px;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>F1 Reaction Test</h1>
+        <p>Интерактивный веб-проект по измерению реакции человека</p>
+    </header>
 
-document.getElementById("startBtn").addEventListener("click", start);
-document.getElementById("stopBtn").addEventListener("click", stop);
-</script>
-<hr style="margin:40px 0;opacity:0.3">
+    <!-- ТЕСТ -->
+    <section>
+        <h2>🏁 Интерактивный тест реакции</h2>
+        <p>
+            Ниже расположен основной элемент сайта — симуляция стартовых огней Формулы-1.
+            После нажатия кнопки START необходимо дождаться момента, когда огни погаснут,
+            и как можно быстрее нажать кнопку STOP.
+        </p>
 
-<section style="max-width:700px;margin:auto;text-align:left">
-    <h2>📘 О проекте</h2>
-    <p>
-        Данный сайт имитирует старт гонки Формулы-1 и позволяет измерить
-        время реакции человека. Проект создан в учебных целях.
-    </p>
+        <div class="f1-start">
+            <div class="columns" id="columns"></div>
+        </div>
 
-    <h2>🧠 Почему реакция важна</h2>
-    <p>
-        В автоспорте реакция играет ключевую роль. Разница даже в
-        доли секунды может повлиять на результат гонки.
-    </p>
+        <button id="startBtn">START</button>
+        <button id="stopBtn">STOP</button>
 
-    <h2>📋 Как пользоваться</h2>
-    <ol>
-        <li>Нажмите кнопку START</li>
-        <li>Дождитесь, пока погаснут все огни</li>
-        <li>Как можно быстрее нажмите STOP</li>
-        <li>Посмотрите результат и оценку</li>
-    </ol>
+        <div id="result" style="font-size:26px;margin-top:10px"></div>
+    </section>
 
-    <h2>📊 Оценка результата</h2>
-    <p>
-        Профессиональные гонщики Формулы-1 имеют реакцию около 200 мс.
-        Средняя реакция обычного человека — 250–300 мс.
-    </p>
+    <!-- РЕКОРДЫ -->
+    <section>
+        <h2>🏆 Таблица рекордов</h2>
+        <p>
+            В таблице сохраняются лучшие результаты пользователя.
+            Данные хранятся локально в браузере с использованием технологии localStorage.
+        </p>
 
-    <h2>✉️ Обратная связь</h2>
-    <input placeholder="Ваше имя" style="width:100%;padding:8px"><br><br>
-    <textarea placeholder="Ваш отзыв" style="width:100%;padding:8px"></textarea><br><br>
-    <button onclick="alert('Спасибо за отзыв!')">Отправить</button>
+        <table>
+            <thead>
+                <tr><th>Место</th><th>Время реакции (мс)</th></tr>
+            </thead>
+            <tbody id="records"></tbody>
+        </table>
+    </section>
 
-    <h2>👤 Автор проекта</h2>
-    <p>
-        Автор: <b>Твоё имя</b><br>
-        Класс: …<br>
-        Школа: …
-    </p>
-</section>
-</body>
-</html>
+    <!-- ОБРАТНАЯ СВЯЗЬ -->
+    <section>
+        <h2>✉️ Обратная связь</h2>
+        <p>Вы можете оставить отзыв о проекте или предложение по улучшению.</p>
+
+        <input id="feedbackName" placeholder="Ваше имя">
+        <textarea id="feedbackMessage" rows="4" placeholder="Ваш отзыв"></textarea>
+        <br><br>
+        <button id="sendFeedback">Отправить</button>
+
+        <h3 style="margin-top: 20px;">Ваши отзывы:</h3>
+        <table id="feedbackTable">
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Имя</th>
+                    <th>Отзыв</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </section>
+
+    <footer>
+        Проект выполнен в учебных целях. 2025 год.
+    </footer>
+
+    <script>
+        // Код теста реакции (ваш исходный код)
+        let columns = [];
+        let timerStarted = false;
+        let startTime = 0;
+
+        function createLights() {
+            const c = document.getElementById("columns");
+            c.innerHTML = "";
+            columns = [];
+
+            for (let i = 0; i < 5; i++) {
+                const col = document.createElement("div");
+                col.className = "column";
+                const lights = [];
+
+                for (let j = 0; j < 3; j++) {
+                    const l = document.createElement("div");
+                    l.className = "light";
+                    col.appendChild(l);
+                    lights.push(l);
+                }
+
+                c.appendChild(col);
+                columns.push(lights);
+            }
+        }
+
+        createLights();
+
+        function sleep(ms) {
+            return new Promise(r => setTimeout(r, ms));
+        }
+
+        async function start() {
+            document.getElementById("result").innerText = "";
+            document.getElementById("startBtn").style.display = "none";
+            document.getElementById("stopBtn").style.display = "inline-block";
+            timerStarted = false;
+            createLights();
+
+            for (let i = 0; i < 5; i++) {
+                columns[i].forEach(l => l.classList.add("on"));
+                await sleep(700);
+            }
+
+            await sleep(Math.random() * 2000 + 1500);
+            columns.flat().forEach(l => l.classList.remove("on"));
+
+            timerStarted = true;
+            startTime = performance.now();
+        }
+
+        function stop() {
+            if (!timerStarted) {
+                document.getElementById("result").innerText = "Фальстарт!";
+                reset();
+                return;
+            }
+
+            const reaction = Math.round(performance.now() - startTime);
+            document.getElementById("result").innerHTML = `⏱ ${reaction} мс`;
+
+            saveRecord(reaction);
+            showRecords();
+            reset();
+        }
+
+        function reset() {
+            document.getElementById("startBtn").style.display = "inline-block";
+            document.getElementById("stopBtn").style.display = "none";
+        }
+
+        function saveRecord(time) {
+            let r = JSON.parse(localStorage.getItem("f1Records")) || [];
+            r.push(time);
+            r.sort((a,b)=>a-b);
+            r = r.slice(0,5);
+            localStorage.setItem("f1Records", JSON.stringify(r));
+        }
+
+        function showRecords() {
+            const tb = document.getElementById("records");
+            tb.innerHTML = "";
+            (JSON.parse(localStorage.getItem("f1Records"))
